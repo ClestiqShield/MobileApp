@@ -2,11 +2,45 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bell, Volume2, User, LogOut, Zap } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '../services/api';
 
 export const ProfileScreen = ({ onLogout }: { onLogout: () => void }) => {
     const [notifications, setNotifications] = useState(true);
     const [sound, setSound] = useState(true);
     const [vibration, setVibration] = useState(true);
+    const [user, setUser] = useState<any>(null);
+
+    React.useEffect(() => {
+        loadProfile();
+    }, []);
+
+    const loadProfile = async () => {
+        try {
+            const userId = await AsyncStorage.getItem('user_id');
+            const email = await AsyncStorage.getItem('user_email');
+
+            if (userId) {
+                const userData = await api.getProfile(userId);
+                setUser(userData);
+            } else if (email) {
+                // Fallback: try to find user by email again if ID missing
+                const users = await api.getUsers();
+                const foundUser = users.find((u: any) => u.email === email);
+                if (foundUser) {
+                    await AsyncStorage.setItem('user_id', String(foundUser.id));
+                    setUser(foundUser);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load profile', e);
+        }
+    };
+
+    const handleLogout = async () => {
+        await api.logout();
+        onLogout();
+    };
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -16,8 +50,8 @@ export const ProfileScreen = ({ onLogout }: { onLogout: () => void }) => {
                         <User size={40} color="#4f46e5" />
                     </View>
                     <View>
-                        <Text style={styles.name}>Admin User</Text>
-                        <Text style={styles.role}>System Administrator</Text>
+                        <Text style={styles.name}>{user ? (user.name || user.email) : 'Loading...'}</Text>
+                        <Text style={styles.role}>{user ? 'User' : '...'}</Text>
                     </View>
                 </View>
             </View>
@@ -71,7 +105,7 @@ export const ProfileScreen = ({ onLogout }: { onLogout: () => void }) => {
                 </View>
             </View>
 
-            <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                 <LogOut size={20} color="#ef4444" />
                 <Text style={styles.logoutText}>Log Out</Text>
             </TouchableOpacity>

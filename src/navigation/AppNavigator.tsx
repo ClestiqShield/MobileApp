@@ -4,7 +4,9 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { LoginScreen } from '../screens/LoginScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
-import { LayoutDashboard, User } from 'lucide-react-native';
+import { AppsScreen } from '../screens/AppsScreen';
+import { AppDetailsScreen } from '../screens/AppDetailsScreen';
+import { LayoutDashboard, User, Box } from 'lucide-react-native';
 
 export type RootStackParamList = {
     Auth: undefined;
@@ -17,12 +19,27 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
     Dashboard: undefined;
+    Apps: undefined;
     Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
+
+export type AppsStackParamList = {
+    AppsList: undefined;
+    AppDetails: { appId: string; appName: string };
+};
+
+const AppsStack = createNativeStackNavigator<AppsStackParamList>();
+
+const AppsNavigator = () => (
+    <AppsStack.Navigator screenOptions={{ headerShown: false }}>
+        <AppsStack.Screen name="AppsList" component={AppsScreen} />
+        <AppsStack.Screen name="AppDetails" component={AppDetailsScreen} />
+    </AppsStack.Navigator>
+);
 
 const AuthNavigator = ({ onLogin }: { onLogin: () => void }) => (
     <AuthStack.Navigator screenOptions={{ headerShown: false }}>
@@ -53,6 +70,13 @@ const MainNavigator = ({ onLogout }: { onLogout: () => void }) => (
             component={DashboardScreen}
             options={{
                 tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} />
+            }}
+        />
+        <Tab.Screen
+            name="Apps"
+            component={AppsNavigator}
+            options={{
+                tabBarIcon: ({ color, size }) => <Box color={color} size={size} />
             }}
         />
         <Tab.Screen
